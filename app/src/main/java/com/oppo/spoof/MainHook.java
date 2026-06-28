@@ -7,8 +7,8 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.File;
+import java.io.FileReader;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,9 +34,9 @@ public class MainHook implements IXposedHookLoadPackage {
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {
-        // 加载包名配置
-        if (targetPackages.isEmpty()) {
-            loadPackages(lpparam);
+        // 加载包名配置（只加载一次）
+        if (targetPackages.isEmpty() && prefixList.isEmpty()) {
+            loadPackages();
         }
 
         String pkg = lpparam.packageName;
@@ -73,16 +73,36 @@ public class MainHook implements IXposedHookLoadPackage {
         hookSystemProperties(lpparam);
     }
 
-    // ─── 加载 assets/packages.txt ───
-    private void loadPackages(XC_LoadPackage.LoadPackageParam lpparam) {
-        try {
-            InputStream is = lpparam.appInfo.loader.getResourceAsStream("assets/packages.txt");
-            if (is == null) {
-                //  fallback: 内置默认列表
-                addDefaultPackages();
+    // ─── 加载包名配置 ───
+    private void loadPackages() {
+        // 按优先级尝试从这些路径读取配置文件
+        String[] configPaths = {
+            "/sdcard/oppo-spoof/packages.txt",       // 用户可轻松编辑
+            "/storage/emulated/0/oppo-spoof/packages.txt",
+            "/data/adb/modules/oppo_mask/config/packages.txt",   // 复用 Zygisk 版配置
+            "/data/adb/modules/oppo-spoof-lsposed/config/packages.txt",
+        };
+
+        for (String path : configPaths) {
+            if (tryLoadFromFile(path)) {
+                XposedBridge.log("[OPPO-Spoof] 已从文件加载配置: " + path);
+                XposedBridge.log("[OPPO-Spoof] 已加载 " + targetPackages.size() + " 个精确包名, "
+                        + prefixList.size() + " 个前缀规则");
                 return;
             }
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        }
+
+        // 所有文件都读不到，使用内置默认列表
+        addDefaultPackages();
+        XposedBridge.log("[OPPO-Spoof] 未找到配置文件，使用内置默认包名列表");
+        XposedBridge.log("[OPPO-Spoof] 已加载 " + targetPackages.size() + " 个精确包名, "
+                + prefixList.size() + " 个前缀规则");
+    }
+
+    private boolean tryLoadFromFile(String path) {
+        File f = new File(path);
+        if (!f.exists() || !f.canRead()) return false;
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
             String line;
             while ((line = br.readLine()) != null) {
                 line = line.trim();
@@ -93,11 +113,9 @@ public class MainHook implements IXposedHookLoadPackage {
                     targetPackages.add(line);
                 }
             }
-            br.close();
-            XposedBridge.log("[OPPO-Spoof] 已加载 " + (targetPackages.size() + prefixList.size()) + " 个包名规则");
+            return !targetPackages.isEmpty() || !prefixList.isEmpty();
         } catch (Exception e) {
-            XposedBridge.log("[OPPO-Spoof] 加载配置失败，使用默认列表: " + e.getMessage());
-            addDefaultPackages();
+            return false;
         }
     }
 
