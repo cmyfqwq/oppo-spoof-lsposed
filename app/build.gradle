@@ -1,5 +1,5 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.application' version '8.2.0'
 }
 
 android {
@@ -27,6 +27,6 @@ android {
 }
 
 dependencies {
-    // Xposed API（provided，不打包进 APK，LSPosed 兼容）
+    // LSPosed Xposed API（provided，不打包进 APK）
     compileOnly 'de.robv.android.xposed:api:82'
 }

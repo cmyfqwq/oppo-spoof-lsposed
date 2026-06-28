@@ -1,12 +1,4 @@
-// 根 build.gradle
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url 'https://api.xposed.info/' }
-    }
-}
-
+// 根 build.gradle - 仅配置仓库
 allprojects {
     repositories {
         google()
