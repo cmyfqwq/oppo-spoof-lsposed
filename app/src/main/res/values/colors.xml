@@ -32,4 +32,14 @@
     <!--  开关 -->
     <color name="switch_track_on">#FF6366F1</color>
     <color name="switch_track_off">#FFCBD5E1</color>
+
+    <!--  顶栏 -->
+    <color name="header_subtitle">#FFB4C6FF</color>
+    <color name="header_version_text">#FF99B4FF</color>
+    <color name="header_icon_bg">#33FFFFFF</color>
+    <color name="header_version_bg">#22FFFFFF</color>
+
+    <!--  提示 & 交互 -->
+    <color name="hint_text">#FF6366F1</color>
+    <color name="ripple_overlay">#1A6366F1</color>
 </resources>

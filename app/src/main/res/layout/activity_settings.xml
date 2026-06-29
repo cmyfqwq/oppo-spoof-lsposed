@@ -21,7 +21,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:gravity="center"
-            android:background="#33FFFFFF"
+            android:background="@drawable/ic_bg_round"
             android:layout_marginEnd="14dp">
 
             <TextView
@@ -51,7 +51,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="自定义机型信息 · LSPosed 勾选即生效"
-                android:textColor="#B4C6FF"
+                android:textColor="@color/header_subtitle"
                 android:textSize="11sp"
                 android:layout_marginTop="2dp" />
         </LinearLayout>
@@ -62,9 +62,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="v2.2"
-            android:textColor="#99B4FF"
+            android:textColor="@color/header_version_text"
             android:textSize="11sp"
-            android:background="#22FFFFFF"
+            android:background="@color/header_version_bg"
             android:paddingHorizontal="8dp"
             android:paddingVertical="3dp" />
     </LinearLayout>
@@ -234,7 +234,19 @@
                 android:id="@+id/card_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:orientation="vertical"
+                android:layout_marginBottom="8dp" />
+
+            <!-- 长按编辑提示 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="💡 长按属性值可自定义修改"
+                android:textColor="@color/text_tertiary"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:layout_marginBottom="8dp"
+                android:alpha="0.7" />
 
             <!-- 底部留白 -->
             <View

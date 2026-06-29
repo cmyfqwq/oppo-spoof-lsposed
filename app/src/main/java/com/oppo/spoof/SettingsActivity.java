@@ -2,16 +2,17 @@ package com.oppo.spoof;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
 import android.widget.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,75 +22,87 @@ public class SettingsActivity extends Activity {
     private LinearLayout cardContainer;
     private SharedPreferences prefs;
 
-    // 新版顶栏/预设卡片视图引用
-    private TextView tvPresetLabel;
-    private TextView tvPresetBrand;
-    private TextView tvPresetModel;
-    private TextView tvPresetAndroid;
-    private TextView tvEnabledCount;
+    private TextView tvPresetLabel, tvPresetBrand, tvPresetModel, tvPresetAndroid, tvEnabledCount;
 
-    // 缓存的开关引用，用于统计
     private final List<Switch> switchList = new ArrayList<>();
+    private int lastSavedScrollY = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        // 沉浸式状态栏适配（让内容不被状态栏遮挡）
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        getWindow().setStatusBarColor(getResources().getColor(R.color.primary_dark));
+        getWindow().setStatusBarColor(getColor(R.color.primary_dark));
 
         prefs = getSharedPreferences("spoof_config", MODE_PRIVATE);
         cardContainer = findViewById(R.id.card_container);
 
-        // 新版视图
-        tvPresetLabel  = findViewById(R.id.tv_preset_label);
-        tvPresetBrand  = findViewById(R.id.tv_preset_brand);
-        tvPresetModel  = findViewById(R.id.tv_preset_model);
+        tvPresetLabel   = findViewById(R.id.tv_preset_label);
+        tvPresetBrand   = findViewById(R.id.tv_preset_brand);
+        tvPresetModel   = findViewById(R.id.tv_preset_model);
         tvPresetAndroid = findViewById(R.id.tv_preset_android);
-        tvEnabledCount = findViewById(R.id.tv_enabled_count);
+        tvEnabledCount  = findViewById(R.id.tv_enabled_count);
 
-        // 预设选择按钮
         findViewById(R.id.btn_preset).setOnClickListener(v -> showPresetDialog());
 
         updatePresetSummary();
-        rebuildCards();
+        rebuildCards(false);
     }
 
     // ─── 重建所有属性卡片 ───
-    private void rebuildCards() {
+    private void rebuildCards(boolean animate) {
+        // 保存当前滚动位置
+        View scrollParent = (View) cardContainer.getParent().getParent();
+        if (scrollParent instanceof ScrollView) {
+            lastSavedScrollY = scrollParent.getScrollY();
+        }
+
         cardContainer.removeAllViews();
         switchList.clear();
 
         String[] presetVals = getCurrentPresetVals();
+        int delayMs = 0;
         for (int i = 0; i < PresetData.PROPS.length; i++) {
             PresetData.PropDef prop = PresetData.PROPS[i];
             boolean isLast = (i == PresetData.PROPS.length - 1);
-            cardContainer.addView(buildCard(prop, presetVals[prop.presetIdx], isLast));
+            View card = buildCard(prop, presetVals[prop.presetIdx], isLast);
+
+            if (animate) {
+                // 卡片依次滑入
+                card.setAlpha(0f);
+                card.setTranslationY(dp2px(24));
+                card.animate().alpha(1f).translationY(0f)
+                        .setDuration(220).setStartDelay(delayMs).start();
+                delayMs += 40;
+            }
+
+            cardContainer.addView(card);
         }
 
         updateEnabledCount();
+
+        // 恢复滚动位置
+        if (scrollParent instanceof ScrollView) {
+            ((ScrollView) scrollParent).post(() -> ((ScrollView) scrollParent).scrollTo(0, lastSavedScrollY));
+        }
     }
 
     // ─── 获取当前预设值 ───
     private String[] getCurrentPresetVals() {
-        String presetKey = prefs.getString("preset", "oneplus_ace6t");
-        return PresetData.getPreset(presetKey);
+        return PresetData.getPreset(prefs.getString("preset", "oneplus_ace6t"));
     }
 
-    // ─── 构建单张属性卡片（Material 3 风格） ───
-    @SuppressWarnings("deprecation")
-    private View buildCard(final PresetData.PropDef prop, String defaultVal, boolean isLast) {
-        // ── 外层卡片 ──
+    // ─── 构建单张属性卡片 ───
+    private View buildCard(PresetData.PropDef prop, String defaultVal, boolean isLast) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        cardParams.setMargins(0, 0, 0, isLast ? 0 : dp(10));
+        cardParams.setMargins(0, 0, 0, isLast ? 0 : dp2px(10));
         card.setLayoutParams(cardParams);
         card.setBackgroundResource(R.drawable.card_bg);
-        card.setPadding(dp(16), dp(14), dp(14), dp(14));
+        card.setPadding(dp2px(16), dp2px(14), dp2px(14), dp2px(14));
 
         // ── 第一行：图标 + 标签 + 开关 ──
         LinearLayout topRow = new LinearLayout(this);
@@ -98,42 +111,39 @@ public class SettingsActivity extends Activity {
         topRow.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        // 图标 — 放在一个 36dp 圆形浅色底上
+        // 图标圆形容器
         LinearLayout iconWrap = new LinearLayout(this);
         iconWrap.setGravity(Gravity.CENTER);
-        iconWrap.setLayoutParams(new LinearLayout.LayoutParams(dp(36), dp(36)));
-        iconWrap.setBackgroundColor(getResources().getColor(R.color.primary_container));
+        iconWrap.setLayoutParams(new LinearLayout.LayoutParams(dp2px(36), dp2px(36)));
+        iconWrap.setBackgroundResource(R.drawable.ic_bg_small);
 
         TextView icon = new TextView(this);
         icon.setText(prop.emoji);
-        icon.setTextSize(17f);
+        icon.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         icon.setGravity(Gravity.CENTER);
         iconWrap.addView(icon);
         topRow.addView(iconWrap);
 
-        // 间距
         View gap1 = new View(this);
-        gap1.setLayoutParams(new LinearLayout.LayoutParams(dp(12), 0));
+        gap1.setLayoutParams(new LinearLayout.LayoutParams(dp2px(12), 0));
         topRow.addView(gap1);
 
-        // 标签
         TextView label = new TextView(this);
         label.setText(prop.label);
-        label.setTextSize(15f);
-        label.setTextColor(getResources().getColor(R.color.text_primary));
+        label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        label.setTextColor(getColor(R.color.text_primary));
         label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         topRow.addView(label);
 
-        // 占位
         View spacer = new View(this);
         spacer.setLayoutParams(new LinearLayout.LayoutParams(0, 0, 1));
         topRow.addView(spacer);
 
-        // Material 风格开关
         Switch sw = new Switch(this);
         sw.setChecked(prefs.getBoolean(prop.enableKey(), false));
         sw.setOnCheckedChangeListener((v, checked) -> {
             prefs.edit().putBoolean(prop.enableKey(), checked).apply();
+            updateCardAlpha(card, checked);
             updateEnabledCount();
         });
         switchList.add(sw);
@@ -141,134 +151,222 @@ public class SettingsActivity extends Activity {
 
         card.addView(topRow);
 
-        // ── 第二行：属性值芯片 ──
+        // ── 第二行：值芯片 ──
         String savedVal = prefs.getString(prop.valueKey(), null);
-        String displayVal = (savedVal != null) ? savedVal : defaultVal;
+        String displayVal = (savedVal != null && !savedVal.isEmpty()) ? savedVal : defaultVal;
 
         LinearLayout valueRow = new LinearLayout(this);
         valueRow.setOrientation(LinearLayout.HORIZONTAL);
         valueRow.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout.LayoutParams valRowParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        valRowParams.setMargins(dp(48), dp(8), 0, 0);
+        valRowParams.setMargins(dp2px(48), dp2px(8), 0, 0);
         valueRow.setLayoutParams(valRowParams);
+        valueRow.setClickable(true);
+        valueRow.setFocusable(true);
+        valueRow.setBackgroundResource(R.drawable.chip_value_bg);
 
-        // 值芯片 — 浅紫蓝底色圆角标签
+        // 值文字
         TextView valueText = new TextView(this);
         valueText.setText(displayVal);
-        valueText.setTextSize(12f);
-        valueText.setTextColor(getResources().getColor(R.color.on_primary_container));
-        valueText.setBackgroundResource(R.drawable.chip_value_bg);
+        valueText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        valueText.setTextColor(getColor(R.color.on_primary_container));
         valueText.setMaxLines(2);
         valueText.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        valueText.setPadding(dp(10), dp(4), dp(10), dp(5));
+        valueText.setPadding(dp2px(10), dp2px(5), dp2px(2), dp2px(5));
         valueRow.addView(valueText);
 
-        // 自定义标记（如果用户手动改过值）
-        if (savedVal != null) {
+        // 自定义标记
+        if (savedVal != null && !savedVal.isEmpty()) {
             TextView editedMark = new TextView(this);
             editedMark.setText(" ✎");
-            editedMark.setTextSize(11f);
-            editedMark.setTextColor(getResources().getColor(R.color.primary));
+            editedMark.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            editedMark.setTextColor(getColor(R.color.primary));
             valueRow.addView(editedMark);
         }
 
         card.addView(valueRow);
 
-        // ── 长按编辑 ──
-        valueRow.setTag(new Object[]{prop, valueText});
-        valueRow.setOnLongClickListener(v -> {
-            showEditDialog(prop, valueText);
-            return true;
-        });
+        // ── 点击事件（点击整行编辑，取代长按） ──
+        Object[] tag = new Object[]{prop, valueText};
+        valueRow.setTag(tag);
+        valueRow.setOnClickListener(v -> showEditDialog(prop, valueText));
+
+        // 初始透明度
+        updateCardAlpha(card, sw.isChecked());
 
         return card;
     }
 
-    // ─── 编辑对话框 ───
-    private void showEditDialog(PresetData.PropDef prop, TextView valueText) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    // ─── 开关控制卡片透明度 ───
+    private void updateCardAlpha(View card, boolean enabled) {
+        card.setAlpha(enabled ? 1.0f : 0.55f);
+    }
 
+    // ─── 编辑对话框（含重置按钮） ───
+    @SuppressWarnings("deprecation")
+    private void showEditDialog(PresetData.PropDef prop, TextView valueText) {
         // 标题
+        LinearLayout headerRow = new LinearLayout(this);
+        headerRow.setGravity(Gravity.CENTER_VERTICAL);
+        headerRow.setPadding(dp2px(20), dp2px(20), dp2px(20), dp2px(8));
+
         TextView titleView = new TextView(this);
-        titleView.setText("修改 " + prop.label);
-        titleView.setTextSize(18f);
-        titleView.setTextColor(getResources().getColor(R.color.text_primary));
+        titleView.setText(prop.emoji + "  " + prop.label);
+        titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        titleView.setTextColor(getColor(R.color.text_primary));
         titleView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        titleView.setPadding(dp(20), dp(20), dp(20), dp(8));
-        builder.setCustomTitle(titleView);
+        headerRow.addView(titleView);
 
         // 输入框
-        final EditText input = new EditText(this);
         String current = prefs.getString(prop.valueKey(), "");
-        if (current.isEmpty()) {
-            current = getCurrentPresetVals()[prop.presetIdx];
-        }
-        input.setText(current);
+        String presetVal = getCurrentPresetVals()[prop.presetIdx];
+        String displayText = !current.isEmpty() ? current : presetVal;
+
+        final EditText input = new EditText(this);
+        input.setText(displayText);
         input.setSelectAllOnFocus(true);
-        input.setTextSize(15f);
-        input.setTextColor(getResources().getColor(R.color.text_primary));
-        input.setBackgroundResource(R.drawable.chip_value_bg);
-        input.setPadding(dp(14), dp(12), dp(14), dp(12));
+        input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        input.setTextColor(getColor(R.color.text_primary));
+        input.setBackgroundColor(getColor(R.color.surface_variant));
+        input.setPadding(dp2px(14), dp2px(14), dp2px(14), dp2px(14));
         input.setInputType(InputType.TYPE_CLASS_TEXT);
 
         LinearLayout wrap = new LinearLayout(this);
-        wrap.setPadding(dp(20), dp(8), dp(20), dp(16));
+        wrap.setOrientation(LinearLayout.VERTICAL);
+        wrap.setPadding(dp2px(20), dp2px(8), dp2px(20), dp2px(4));
         wrap.addView(input, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        builder.setView(wrap);
 
-        builder.setPositiveButton("确定", (dialog, which) -> {
-            String val = input.getText().toString().trim();
-            if (!val.isEmpty()) {
-                prefs.edit().putString(prop.valueKey(), val).apply();
-                // 重建卡片以刷新视觉
-                rebuildCards();
-                Toast.makeText(this, prop.label + " 已更新", Toast.LENGTH_SHORT).show();
-            }
-        });
-        builder.setNegativeButton("取消", null);
-        builder.show();
+        // 提示当前预设值
+        if (!current.isEmpty()) {
+            TextView hint = new TextView(this);
+            hint.setText("预设值: " + presetVal);
+            hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            hint.setTextColor(getColor(R.color.text_tertiary));
+            hint.setPadding(dp2px(4), dp2px(6), 0, 0);
+            wrap.addView(hint);
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setCustomTitle(headerRow)
+            .setView(wrap)
+            .setPositiveButton("确定", (dialog, which) -> {
+                String val = input.getText().toString().trim();
+                if (!val.isEmpty()) {
+                    prefs.edit().putString(prop.valueKey(), val).apply();
+                    rebuildCards(false);
+                    Toast.makeText(this, prop.label + " 已更新", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("取消", null);
+
+        // 重置按钮：清空自定义值回退到预设
+        String hasCustom = prefs.getString(prop.valueKey(), null);
+        if (hasCustom != null && !hasCustom.isEmpty()) {
+            builder.setNeutralButton("重置为预设", (dialog, which) -> {
+                prefs.edit().remove(prop.valueKey()).apply();
+                rebuildCards(false);
+                Toast.makeText(this, prop.label + " 已恢复预设值", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     // ─── 预设选择对话框 ───
     private void showPresetDialog() {
         String[] keys = PresetData.PRESETS.keySet().toArray(new String[0]);
-        List<String> labelList = new ArrayList<>();
         String currentKey = prefs.getString("preset", "oneplus_ace6t");
+        String[] currentVals = PresetData.getPreset(currentKey);
+
+        // 自定义布局：每行品牌·型号 | Android版本
+        LinearLayout listView = new LinearLayout(this);
+        listView.setOrientation(LinearLayout.VERTICAL);
+        listView.setPadding(dp2px(8), dp2px(4), dp2px(8), dp2px(4));
 
         for (String k : keys) {
-            String lbl = PresetData.LABELS.get(k);
             String[] vals = PresetData.getPreset(k);
-            String check = k.equals(currentKey) ? "  ✓" : "";
-            labelList.add((lbl != null ? lbl : k) + "  —  " + vals[PresetData.IDX_MODEL] + check);
-        }
-        String[] labels = labelList.toArray(new String[0]);
+            String label = PresetData.LABELS.get(k);
+            boolean isCurrent = k.equals(currentKey);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
-            .setTitle("选择预设机型")
-            .setItems(labels, (d, which) -> {
-                String presetKey = keys[which];
-                prefs.edit().putString("preset", presetKey).apply();
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp2px(16), dp2px(14), dp2px(16), dp2px(14));
+            row.setTag(k);
 
-                // 清空所有自定义值
-                SharedPreferences.Editor ed = prefs.edit();
-                for (PresetData.PropDef p : PresetData.PROPS) {
-                    ed.remove(p.valueKey());
+            // 选中标记
+            TextView check = new TextView(this);
+            check.setText(isCurrent ? "● " : "○ ");
+            check.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            check.setTextColor(isCurrent ? getColor(R.color.success) : getColor(R.color.text_tertiary));
+            check.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            row.addView(check);
+
+            // 名称 + 型号
+            LinearLayout mid = new LinearLayout(this);
+            mid.setOrientation(LinearLayout.VERTICAL);
+            mid.setLayoutParams(new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+            TextView name = new TextView(this);
+            name.setText(label);
+            name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            name.setTextColor(getColor(R.color.text_primary));
+            name.setTypeface(Typeface.DEFAULT, isCurrent ? Typeface.BOLD : Typeface.NORMAL);
+            mid.addView(name);
+
+            TextView model = new TextView(this);
+            model.setText(vals[PresetData.IDX_MODEL] + "  ·  Android " + vals[PresetData.IDX_RELEASE]);
+            model.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            model.setTextColor(getColor(R.color.text_secondary));
+            mid.addView(model);
+
+            row.addView(mid);
+            row.setClickable(true);
+            row.setFocusable(true);
+            row.setBackgroundResource(R.drawable.ripple_list_item);
+
+            row.setOnClickListener(v -> {
+                String presetKey = (String) v.getTag();
+                // 关闭对话框
+                if (v.getParent().getParent().getParent().getParent() instanceof AlertDialog) {
+                    ((AlertDialog) v.getParent().getParent().getParent().getParent()).dismiss();
                 }
-                ed.apply();
+                applyPreset(presetKey);
+            });
 
-                updatePresetSummary();
-                rebuildCards();
-                Toast.makeText(this, "已切换为: " + PresetData.LABELS.get(presetKey),
-                        Toast.LENGTH_SHORT).show();
-            })
-            .create();
+            listView.addView(row);
 
-        dialog.show();
+            // 分隔线（最后一项不加）
+            if (!k.equals(keys[keys.length - 1])) {
+                View div = new View(this);
+                div.setLayoutParams(new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, dp2px(1)));
+                div.setBackgroundColor(getColor(R.color.border));
+                listView.addView(div);
+            }
+        }
 
-        // 给对话框按钮染色
-        dialog.getButton(DialogInterface.BUTTON_NEGATIVE);
+        new AlertDialog.Builder(this)
+            .setTitle("选择预设机型")
+            .setView(listView)
+            .create()
+            .show();
+    }
+
+    private void applyPreset(String presetKey) {
+        prefs.edit().putString("preset", presetKey).apply();
+        SharedPreferences.Editor ed = prefs.edit();
+        for (PresetData.PropDef p : PresetData.PROPS) {
+            ed.remove(p.valueKey());
+        }
+        ed.apply();
+        updatePresetSummary();
+        rebuildCards(true);
     }
 
     // ─── 更新预设摘要区 ───
@@ -293,9 +391,14 @@ public class SettingsActivity extends Activity {
         tvEnabledCount.setText(count + "/10 已启用");
     }
 
-    // ─── dp 转换 ───
+    // ─── 工具方法 ───
     @SuppressWarnings("deprecation")
-    private int dp(int px) {
-        return (int) (px * getResources().getDisplayMetrics().density);
+    private int getColor(int id) {
+        return getResources().getColor(id, getTheme());
+    }
+
+    private int dp2px(int dp) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,
+                getResources().getDisplayMetrics());
     }
 }
