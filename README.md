@@ -1,58 +1,47 @@
-# 伪装为OPPO - LSPosed 模块
+# OPPO Spoof — LSPosed 设备伪装模块
 
-专为 OPPO/一加设备打造，在 LSPosed 框架下伪装 Build 信息为目标设备（一加 Ace 6T），支持按包名精准控制。
+LSPosed 框架模块，伪装设备 Build 信息为目标机型。**LSPosed 勾选即生效，无需配置包名白名单**。
 
 ## 功能
 
-- 🎭 伪装 `Build.MANUFACTURER / BRAND / MODEL / DEVICE` 等字段
-- 🔧 Hook `SystemProperties` native 读取（彻底解决 `SDK_INT` 伪装失效问题）
-- 📦 通过 `assets/packages.txt` 配置目标包名，无需重新编译
-- 🎯 支持精确包名 + 前缀匹配两种规则
-
-## 默认伪装的包名
-
-| 前缀/包名 | 说明 |
-|---|---|
-| `com.heytap.*` | 小布助手、浏览器、云服务等 |
-| `com.coloros.*` | 安全中心、游戏空间、文件管理等 |
-| `com.nearme.*` | 游戏中心、钱包等 |
-| `com.oppo.*` / `com.oplus.*` | OPPO 系 App |
-| `com.finshell.wallet` | OPPO 钱包 |
-| `com.finshell.fin` | OPPO 金融 |
+- 🎭 伪装 10 项设备属性：品牌 / 制造商 / 型号 / 设备代号 / 产品名 / 硬件 / 指纹 / 版本号 / SDK / 显示ID
+- 🔧 核心采用 **SystemProperties Hook**，兼容 Android 14/15/16（绕过 ART 反射封锁）
+- 📱 7 个预设机型：一加 Ace 6T / 一加 13 / OPPO Find X8 / 小米 14 / 华为 Mate 60 Pro / 三星 S24 Ultra / vivo X100 Pro
+- 🎛️ 桌面设置界面：独立开关控制每个属性，支持自定义覆盖值
+- 🏗️ **PresetData 共享架构**：预设数据集中维护，MainHook 和 UI 自动同步
 
 ## 使用方法
 
-1. 安装 **LSPosed** 框架
+1. 安装 **LSPosed** 框架（Magisk/KernelSU/APatch + Zygisk）
 2. 安装本模块 APK
-3. LSPosed → 模块 → 勾选「伪装为OPPO」
-4. 勾选需要伪装的目标 App
-5. 重启设备生效
-
-## 自定义包名
-
-编辑模块 APK 内 `assets/packages.txt`（或直接修改源码重新编译）：
-
-```
-# 精确包名
-com.tencent.mm
-
-# 前缀匹配（以 . 结尾）
-com.heytap.
-```
+3. LSPosed → 模块 → 勾选「设备伪装」，选择需要伪装的 App
+4. 打开「设备伪装」桌面图标，选择预设机型或自定义属性
+5. 重启目标 App 生效
 
 ## 编译
 
 ```bash
-git clone https://github.com/你的用户名/oppo-spoof-lsposed.git
+git clone https://github.com/cmyfqwq/oppo-spoof-lsposed.git
 cd oppo-spoof-lsposed
 ./gradlew assembleRelease
 ```
 
-或直接使用 GitHub Actions 自动编译（Fork 后推送即自动构建）。
+GitHub Actions 自动编译：push 到 main 分支即自动构建 APK。
+
+## 架构
+
+```
+PresetData.java      ← 共享预设数据（单一数据源）
+    ├── MainHook.java       ← Xposed Hook 逻辑（SystemProperties 拦截）
+    └── SettingsActivity.java ← 桌面设置 UI（卡片式界面）
+```
+
+配置存储：SharedPreferences（应用内 `MODE_PRIVATE`，跨进程 `XSharedPreferences.makeWorldReadable()`）
+
 
 ## 下载
 
-前往 [Releases](https://github.com/你的用户名/oppo-spoof-lsposed/releases) 页面下载最新 APK。
+前往 [Releases](https://github.com/cmyfqwq/oppo-spoof-lsposed/releases) 页面下载最新 APK。
 
 ## 许可证
 
