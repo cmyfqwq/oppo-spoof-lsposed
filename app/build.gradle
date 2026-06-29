@@ -10,8 +10,8 @@ android {
         applicationId 'com.cmyf.oppo.spoof'
         minSdk 26
         targetSdk 35
-        versionCode 24
-        versionName 'v2.4'
+        versionCode 25
+        versionName 'v2.5'
     }
 
     buildTypes {
