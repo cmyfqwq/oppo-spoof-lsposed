@@ -52,5 +52,5 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: oppo-spoof-lsposed-v2.3
+        name: MaskProps-v2.5
         path: app/build/outputs/apk/release/*.apk
