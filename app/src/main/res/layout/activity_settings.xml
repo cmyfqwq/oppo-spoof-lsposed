@@ -76,15 +76,17 @@
 
         <Button
             android:id="@+id/btn_preset"
-            android:layout_width="60dp"
+            android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:backgroundTint="#4CAF50"
-            android:text="选择"
+            android:text="选择预设"
             android:textColor="#FFFFFF"
-            android:textSize="13sp"
+            android:textSize="14sp"
             android:minWidth="0dp"
-            android:paddingStart="0dp"
-            android:paddingEnd="0dp" />
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:layout_gravity="center_vertical"
+            android:gravity="center" />
     </LinearLayout>
 
     <!-- 属性卡片列表 -->
