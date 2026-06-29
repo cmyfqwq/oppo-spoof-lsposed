@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--  预设选择按钮：翠绿实色 + 暗角按下态 -->
-<ripple xmlns:android="http://schemas.android.com/apk/res/android"
-    android:color="#1A000000">
-    <item>
-        <selector>
-            <item android:state_pressed="true">
-                <shape android:shape="rectangle">
-                    <solid android:color="#FF16A34A" />
-                    <corners android:radius="12dp" />
-                </shape>
-            </item>
-            <item>
-                <shape android:shape="rectangle">
-                    <solid android:color="@color/success" />
-                    <corners android:radius="12dp" />
-                </shape>
-            </item>
-        </selector>
+<!--  预设选择按钮：翠绿实色 + 按下暗色态 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF16A34A" />
+            <corners android:radius="12dp" />
+        </shape>
     </item>
-</ripple>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/success" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</selector>

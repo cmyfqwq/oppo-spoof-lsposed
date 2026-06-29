@@ -11,8 +11,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.animation.Animation;
-import android.view.animation.TranslateAnimation;
 import android.widget.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -204,7 +202,6 @@ public class SettingsActivity extends Activity {
     }
 
     // ─── 编辑对话框（含重置按钮） ───
-    @SuppressWarnings("deprecation")
     private void showEditDialog(PresetData.PropDef prop, TextView valueText) {
         // 标题
         LinearLayout headerRow = new LinearLayout(this);
@@ -392,7 +389,6 @@ public class SettingsActivity extends Activity {
     }
 
     // ─── 工具方法 ───
-    @SuppressWarnings("deprecation")
     private int getColor(int id) {
         return getResources().getColor(id, getTheme());
     }
