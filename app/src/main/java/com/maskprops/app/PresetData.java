@@ -107,11 +107,13 @@ public final class PresetData {
     public static class PropDef {
         public final String key;       // SharedPreference key
         public final String label;     // 中文标签
+        public final String desc;      // 属性说明
         public final int presetIdx;    // 对应 PRESETS 数组的索引
 
-        public PropDef(String key, String label, int presetIdx) {
+        public PropDef(String key, String label, String desc, int presetIdx) {
             this.key = key;
             this.label = label;
+            this.desc = desc;
             this.presetIdx = presetIdx;
         }
 
@@ -123,16 +125,16 @@ public final class PresetData {
     }
 
     public static final PropDef[] PROPS = {
-        new PropDef("brand",        "品牌",     IDX_BRAND),
-        new PropDef("manufacturer", "制造商",   IDX_MANUFACTURER),
-        new PropDef("model",        "型号",     IDX_MODEL),
-        new PropDef("device",       "设备代号", IDX_DEVICE),
-        new PropDef("product",      "产品名",   IDX_PRODUCT),
-        new PropDef("hardware",     "硬件",     IDX_HARDWARE),
-        new PropDef("fingerprint",  "指纹",     IDX_FINGERPRINT),
-        new PropDef("release",      "版本号",   IDX_RELEASE),
-        new PropDef("sdk",          "SDK",      IDX_SDK),
-        new PropDef("display",      "显示ID",   IDX_DISPLAY),
+        new PropDef("brand",        "品牌",        "设备品牌名称，如 OnePlus、Xiaomi", IDX_BRAND),
+        new PropDef("manufacturer", "制造商",       "设备制造商，通常与品牌相同", IDX_MANUFACTURER),
+        new PropDef("model",        "型号",         "设备具体型号，如 ACE6T、23127PN0CC", IDX_MODEL),
+        new PropDef("device",       "设备代号",      "开发代号，如 ace6t、houji", IDX_DEVICE),
+        new PropDef("product",      "产品名",       "产品名称，通常与设备代号相同", IDX_PRODUCT),
+        new PropDef("hardware",     "硬件",         "硬件平台标识，如 qcom（高通）、mt6989（联发科）", IDX_HARDWARE),
+        new PropDef("fingerprint",  "构建指纹",      "系统唯一标识，包含品牌/型号/版本等信息", IDX_FINGERPRINT),
+        new PropDef("release",      "Android 版本",  "Android 系统版本号，如 14、15", IDX_RELEASE),
+        new PropDef("sdk",          "SDK 版本",     "Android API 级别，如 34（Android 14）、35（Android 15）", IDX_SDK),
+        new PropDef("display",      "显示 ID",      "系统构建显示的版本标识", IDX_DISPLAY),
     };
 
     // ─── 系统属性 Key 映射 ───

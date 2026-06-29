@@ -36,9 +36,70 @@ public class SettingsActivity extends Activity {
         tvPresetAndroid = findViewById(R.id.tv_preset_android);
 
         findViewById(R.id.btn_preset).setOnClickListener(v -> showPresetDialog());
+        findViewById(R.id.btn_help).setOnClickListener(v -> showHelpDialog());
+        
+        // 显示使用帮助（首次启动）
+        checkFirstLaunch();
 
         updatePresetSummary();
         rebuildCards();
+    }
+    
+    /** 检查是否首次启动，显示引导 */
+    private void checkFirstLaunch() {
+        boolean isFirst = prefs.getBoolean("first_launch", true);
+        if (isFirst) {
+            showHelpDialog();
+            prefs.edit().putBoolean("first_launch", false).apply();
+        }
+    }
+    
+    /** 显示使用帮助对话框 */
+    private void showHelpDialog() {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(dp(24), dp(16), dp(24), dp(8));
+        
+        // 标题
+        TextView title = new TextView(this);
+        title.setText("🎭 欢迎使用 MaskProps");
+        title.setTextSize(18f);
+        title.setTextColor(getResources().getColor(R.color.text_primary));
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        title.setGravity(Gravity.CENTER);
+        layout.addView(title);
+        
+        // 说明文字
+        String helpText = "\n📱 功能说明\n" +
+                "MaskProps 可以伪装你的设备信息，让应用认为你在使用其他设备。\n" +
+                "\n🚀 使用步骤\n" +
+                "1. 选择一个预设机型（如「一加 13」）\n" +
+                "2. 勾选要伪装的设备属性\n" +
+                "3. 在 LSPosed Manager 中勾选本模块\n" +
+                "4. 重启设备生效\n" +
+                "\n💡 小贴士\n" +
+                "• 点击属性卡片下方的值可以自定义修改\n" +
+                "• 长按「切换机型」可以快速重置所有属性\n" +
+                "• 建议使用预设值，手动修改可能导致指纹不匹配";
+        
+        TextView help = new TextView(this);
+        help.setText(helpText);
+        help.setTextSize(13f);
+        help.setTextColor(getResources().getColor(R.color.text_secondary));
+        help.setLineSpacing(dp(4), 1.0f);
+        layout.addView(help);
+        
+        new AlertDialog.Builder(this)
+            .setView(layout)
+            .setPositiveButton("开始使用", null)
+            .setNeutralButton("查看详细说明", (d, w) -> showDetailedHelp())
+            .show();
+    }
+    
+    /** 显示详细帮助 */
+    private void showDetailedHelp() {
+        // TODO: 可以打开网页或显示更详细的帮助
+        Toast.makeText(this, "详细帮助正在开发中", Toast.LENGTH_SHORT).show();
     }
 
     // ─── 重建属性卡片 ───
@@ -129,6 +190,19 @@ public class SettingsActivity extends Activity {
         valueRow.setOnClickListener(v -> showEditDialog(prop, valueText));
 
         card.addView(valueRow);
+
+        // ── 第三行：属性说明 ──
+        TextView descText = new TextView(this);
+        descText.setText(prop.desc);
+        descText.setTextSize(11f);
+        descText.setTextColor(getResources().getColor(R.color.text_tertiary));
+        descText.setMaxLines(2);
+        descText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams descParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        descParams.topMargin = dp(6);
+        descText.setLayoutParams(descParams);
+        card.addView(descText);
 
         // 初始透明度
         card.setAlpha(sw.isChecked() ? 1.0f : 0.4f);
