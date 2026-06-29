@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--  主色调 — Indigo 紫蓝系，比基础蓝更高级 -->
+    <color name="primary">#FF6366F1</color>
+    <color name="primary_dark">#FF4F46E5</color>
+    <color name="primary_container">#FFE0E7FF</color>
+    <color name="on_primary">#FFFFFFFF</color>
+    <color name="on_primary_container">#FF1E1B4B</color>
+
+    <!--  强调色 — 天蓝辅助 -->
+    <color name="secondary">#FF0EA5E9</color>
+    <color name="secondary_container">#FFE0F2FE</color>
+
+    <!--  成功色 — 翠绿 -->
+    <color name="success">#FF22C55E</color>
+    <color name="success_container">#FFDCFCE7</color>
+
+    <!--  背景 & 表面 -->
+    <color name="bg_page">#FFF8FAFC</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="surface_variant">#FFF1F5F9</color>
+
+    <!--  文字 -->
+    <color name="text_primary">#FF0F172A</color>
+    <color name="text_secondary">#FF475569</color>
+    <color name="text_tertiary">#FF94A3B8</color>
+
+    <!--  边框 -->
+    <color name="border">#FFE2E8F0</color>
+    <color name="border_focus">#FF6366F1</color>
+
+    <!--  开关 -->
+    <color name="switch_track_on">#FF6366F1</color>
+    <color name="switch_track_off">#FFCBD5E1</color>
+</resources>
