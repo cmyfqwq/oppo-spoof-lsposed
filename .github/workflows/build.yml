@@ -47,10 +47,10 @@ jobs:
         gradle --version
 
     - name: Build APK
-      run: gradle assembleRelease --no-daemon --stacktrace
+      run: gradle assembleDebug --no-daemon --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: MaskProps-v2.5
-        path: app/build/outputs/apk/release/*.apk
+        name: MaskProps-v3.0
+        path: app/build/outputs/apk/debug/*.apk
